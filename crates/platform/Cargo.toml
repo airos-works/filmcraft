@@ -22,6 +22,10 @@ needless_range_loop = "allow"
 type_complexity = "allow"
 undocumented_unsafe_blocks = "deny"
 
+# air/OS: the C++ side of the Media Kit decoder add-ons (build.rs builds it only for Haiku).
+[build-dependencies]
+cc = "1"
+
 [dependencies]
 filmcraft-bitstream = { workspace = true }
 filmcraft-codecs = { workspace = true }

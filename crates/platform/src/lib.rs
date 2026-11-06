@@ -4,7 +4,8 @@
 //! [`register`] puts the platform's hardware decoder factory in front of FilmCraft's own decoders
 //! (`filmcraft_codecs::register_video_decoder`). Today that is VideoToolbox on macOS for H.264
 //! (`avcC`) and HEVC (`hvcC`) streams, 8- and 10-bit, 4:2:0 and 4:2:2; Media Foundation / DXVA on
-//! Windows; NVDEC ([`nvdec`], NVIDIA's driver) and VA-API ([`vaapi`]) on Linux for H.264 and HEVC; on other systems (and on
+//! Windows; NVDEC ([`nvdec`], NVIDIA's driver) and VA-API ([`vaapi`]) on Linux for H.264 and HEVC; air/OS's
+//! Media Kit hardware decoder add-ons ([`media_kit`]) on Haiku; on other systems (and on
 //! Linux with neither) registration does nothing and reports [`Availability::Unavailable`]. It also registers a
 //! hardware H.264 encoder factory (`filmcraft_export::register_encoder`) that only acts when an
 //! export asks for it (`ExportSettings::hardware_encoding` = `Auto`), see [`hardware_encode`]; on
@@ -40,6 +41,8 @@ pub mod hardware_encode;
 pub mod hybrid;
 #[cfg(target_os = "windows")]
 pub mod media_foundation;
+#[cfg(target_os = "haiku")]
+pub mod media_kit;
 #[cfg(all(target_os = "linux", target_pointer_width = "64"))]
 pub mod nvdec;
 #[cfg(any(target_os = "windows", all(target_os = "linux", target_pointer_width = "64")))]
@@ -132,7 +135,22 @@ pub fn register() -> Availability {
         }
         available
     }
-    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+    // air/OS (Haiku): the Media Kit's hardware decoder add-ons (NVDEC on NVIDIA cards)
+    #[cfg(target_os = "haiku")]
+    match media_kit::probe() {
+        Ok(add_ons) => {
+            static ONCE: std::sync::Once = std::sync::Once::new();
+            ONCE.call_once(|| log::info!("hardware decoding through the Media Kit: {add_ons}"));
+            filmcraft_codecs::register_video_decoder(media_kit_factory);
+            filmcraft_codecs::hw::set_hw_backend("Media Kit");
+            Availability::Available("Media Kit")
+        }
+        Err(why) => {
+            log::info!("no Media Kit hardware decoding: {why}");
+            Availability::Unavailable("no Media Kit hardware decoder add-on (nvdec), or FILMCRAFT_NO_HW_DECODE")
+        }
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux", target_os = "haiku")))]
     {
         Availability::Unavailable("no hardware video decoder for this system yet")
     }
@@ -156,7 +174,11 @@ pub fn registered() -> bool {
         }
         filmcraft_codecs::video_decoder_registered(vaapi_factory)
     }
-    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+    #[cfg(target_os = "haiku")]
+    {
+        filmcraft_codecs::video_decoder_registered(media_kit_factory)
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux", target_os = "haiku")))]
     {
         false
     }
@@ -183,10 +205,35 @@ pub fn hardware_decoder_for(entry: &filmcraft_isobmff::SampleEntry) -> bool {
             vaapi::VaDecoder::new(info).is_ok()
         })
     }
-    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+    #[cfg(target_os = "haiku")]
+    {
+        filmcraft_codecs::hw::NalStreamInfo::from_entry(entry).and_then(|r| r.ok()).is_some_and(|info| media_kit::MkDecoder::new(info).is_ok())
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux", target_os = "haiku")))]
     {
         let _ = entry;
         false
+    }
+}
+
+/// The Media Kit factory (air/OS): a [`HybridDecoder`] around [`media_kit::MkDecoder`] for H.264
+/// and HEVC streams a hardware decoder add-on takes, `None` otherwise.
+#[cfg(target_os = "haiku")]
+pub fn media_kit_factory(entry: &filmcraft_isobmff::SampleEntry) -> Option<filmcraft_codecs::Result<Box<dyn filmcraft_codecs::VideoDecoder>>> {
+    if !filmcraft_codecs::hw::hardware_decoding() || media_kit::disabled() {
+        return None;
+    }
+    let info = filmcraft_codecs::hw::NalStreamInfo::from_entry(entry)?.ok()?;
+    match media_kit::MkDecoder::new(info.clone()) {
+        Ok(mk) => {
+            log::info!("hardware decoding {} video with {}", entry.codec.name(), filmcraft_codecs::VideoDecoder::name(&mk));
+            Some(Ok(Box::new(HybridDecoder::new(Box::new(mk), entry.clone(), info))))
+        }
+        Err(why) => {
+            log::info!("hardware decoding declined for {} video: {why}", entry.codec.name());
+            filmcraft_codecs::hw::note_hw_declined();
+            None
+        }
     }
 }
 
