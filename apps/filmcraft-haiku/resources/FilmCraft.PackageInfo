@@ -1,0 +1,20 @@
+name filmcraft
+version 0.17.0~airos1-1
+architecture x86_64
+summary "Non-linear video editor"
+description "FilmCraft for air/OS: the Rust video editor with native windows, menus and file panels; Vulkan rendering, monitors, effects and exports on the GPU with a software fallback; Media Kit sound, voice-over recording, codecs and hardware video decoding."
+packager "FilmCraft for air/OS"
+vendor "airos-works"
+copyrights { "2026 FilmCraft contributors" }
+licenses { "MIT" "Apache v2" }
+urls { "https://github.com/airos-works/filmcraft" }
+provides {
+    filmcraft = 0.17.0
+    app:FilmCraft = 0.17.0
+}
+requires {
+    haiku >= r1~beta6
+    lib:libstdc++
+    lib:libgcc_s
+}
+post-install-scripts { "boot/post-install/filmcraft.sh" }

@@ -1,0 +1,56 @@
+[package]
+name = "filmcraft-haiku"
+description = "FilmCraft native air/OS host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+# The native host is the air/OS fork's FFI boundary to the Be API (host.cpp, audio.cpp): unsafe is
+# allowed there, in `host.rs`, `audio.rs`, `audio_in.rs` and `media_kit.rs` only (AGENTS.md).
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+cognitive_complexity = "deny"
+too_many_arguments = "deny"
+wildcard_imports = "deny"
+dbg_macro = "warn"
+needless_range_loop = "allow"
+type_complexity = "allow"
+
+[[bin]]
+name = "FilmCraft"
+path = "src/main.rs"
+
+[dependencies]
+filmcraft-engine.workspace = true
+filmcraft-export.workspace = true
+filmcraft-gpu.workspace = true
+filmcraft-media.workspace = true
+filmcraft-codecs.workspace = true
+filmcraft-platform.workspace = true
+filmcraft-project.workspace = true
+filmcraft-render.workspace = true
+filmcraft-time.workspace = true
+filmcraft-frame.workspace = true
+filmcraft-color.workspace = true
+filmcraft-ui-egui.workspace = true
+egui.workspace = true
+serde_json.workspace = true
+log.workspace = true
+# The desktop app's logging.rs and control_server.rs (shared by path) and its local time.
+chrono = { workspace = true, features = ["clock"] }
+subtle = "2.6"
+rayon.workspace = true
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[target.'cfg(target_os = "haiku")'.dependencies]
+wgpu = { version = "30", default-features = false, features = ["std", "wgsl", "vulkan"] }
+egui-wgpu = { version = "0.37", default-features = false }
+# The raw Vulkan device, to import the screen's frame buffer (src/present.rs); the version wgpu-hal uses.
+ash = "0.38"
+pollster = "1"
+
+[build-dependencies]
+cc = "1"

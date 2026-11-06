@@ -1,0 +1,25 @@
+resource app_signature "application/x-vnd.storytold-FilmCraft";
+// Preserve this attribute inside the hpkg for Tracker's initial document refs.
+resource(2, "BEOS:TYPE") #'MIMS' "application/x-vnd.Be-elfexecutable";
+// One copy runs: projects and media opened from Tracker while it runs arrive in it as
+// B_REFS_RECEIVED, and a launch from Terminal hands its arguments over (B_ARGV_RECEIVED) and ends.
+resource app_flags B_SINGLE_LAUNCH;
+resource app_version {
+    major = 0, middle = 17, minor = 0, variety = B_APPV_DEVELOPMENT, internal = 1,
+    short_info = "FilmCraft 0.17.0",
+    long_info = "FilmCraft video editor for air/OS (MIT or Apache-2.0)."
+};
+resource vector_icon { import "FilmCraft.hvif" };
+resource file_types message {
+    "types" = "application/x-filmcraft",
+    "types" = "video/mp4",
+    "types" = "video/quicktime",
+    "types" = "video/x-matroska",
+    "types" = "video/webm",
+    "types" = "video/x-msvideo",
+    "types" = "video/mpeg",
+    "types" = "video/mp2t",
+    "types" = "application/mxf",
+    "types" = "video",
+    "types" = "audio"
+};

@@ -12,7 +12,9 @@
   <img src="assets/app-icon/hicolor/256x256/apps/ai.storyteller.filmcraft.png" width="128" height="128" alt="FilmCraft icon: an engraved owl on a purple tile">
 </p>
 
-<h1 align="center">FilmCraft</h1>
+<h1 align="center">FilmCraft for air/OS</h1>
+
+This independent fork ports [FilmCraft by the ArtCraft team](https://github.com/storytold/filmcraft) to air/OS (Haiku), with a native Be API host, Vulkan rendering (the interface, the monitors' compositing and effects, and exports on the GPU, with a software fallback) and the Media Kit for sound, voice-over recording, extra codecs and hardware video decoding. See [build instructions and validation](docs/haiku.md). The upstream project does not maintain or support this port.
 
 <p align="center">
   <b>Video editing, color and sound; an open-source, professional non-linear video editor, built in pure Rust.</b>

@@ -232,3 +232,14 @@ as PhotoCraft does with `cargo xtask corpus`.
 - Workflows in `.github/workflows/` call the shared workflows in [`storytold/craft-common-actions`](https://github.com/storytold/craft-common-actions) at `@main`, with their inputs and secrets. No other jobs: if no shared workflow does what's needed, it doesn't go here.
 - Don't add or change CI in a feature or fix PR. If the existing workflows can't build or test a change, link an existing craft-common-actions issue or PR, or open a new issue, or a PR only for a small fix that is safe for every app and does not increase CI time.
 - Some workflow files here still run their own jobs. Don't add to them. Moving a job into craft-common-actions is its own task, never part of another PR, and the job stays here until a shared workflow runs it.
+
+## air/OS fork
+
+This fork (airos-works/filmcraft) ports FilmCraft to air/OS (Haiku) with a native Be API host in
+`apps/filmcraft-haiku` (see [`docs/haiku.md`](docs/haiku.md)). Its C++ boundary
+(`apps/filmcraft-haiku/native/`) and the documented `unsafe` wrappers over it (`src/host.rs`,
+`src/audio.rs`, `src/audio_in.rs`, `src/media_kit.rs`, and `src/scanout.rs` for the Vulkan frame
+buffer import) are permitted for operating-system integration, as `crates/platform` is for the OS
+media APIs; `crates/platform/src/media_kit.rs` (+ `native/media_kit.cpp`) is that crate's air/OS
+hardware decoder backend. Every other crate keeps `unsafe_code = "forbid"`. Do not replace the
+editor, its GPU compositor or its decoders with reduced implementations.
