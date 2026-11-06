@@ -1,0 +1,8 @@
+asset:        FilmCraft.svg
+title:        FilmCraft air/OS application icon (SVG preview of the HVIF)
+author:       FilmCraft contributors (air/OS fork)
+source:       original work (drawn in code by tools/haiku/make-icon.py)
+license:      MIT OR Apache-2.0
+license-file:
+added:        2026-11-07 by Claude (agent) for the air/OS fork
+notes:        A clapperboard on a receding slab with a play mark, in the Haiku icon style (light from the top left, floor shadow, two-unit outline). Vector shapes written by the script; no raster inputs, fonts or third-party artwork. Contains no Adobe artwork.
