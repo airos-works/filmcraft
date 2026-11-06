@@ -56,6 +56,7 @@ pub mod frames;
 pub mod graphics_notice;
 pub mod header;
 pub mod i18n;
+pub mod integration;
 pub mod icons;
 mod ime_reset;
 pub mod links;
@@ -393,7 +394,7 @@ pub struct FilmcraftApp {
 }
 
 pub struct GpuState {
-    pub render_state: eframe::egui_wgpu::RenderState,
+    pub render_state: egui_wgpu::RenderState,
     pub compositor: filmcraft_gpu::GpuCompositor,
     pub texture: Option<egui::TextureId>,
     pub last_key: Option<FrameKey>,

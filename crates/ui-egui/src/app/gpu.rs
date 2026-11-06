@@ -2,7 +2,7 @@ use super::{FilmcraftApp, FrameKey, GpuState, frames, gpu_compositor_unsupported
 
 impl FilmcraftApp {
     /// Enable the GPU compositor on the eframe wgpu device.
-    pub fn set_wgpu(&mut self, rs: eframe::egui_wgpu::RenderState) {
+    pub fn set_wgpu(&mut self, rs: egui_wgpu::RenderState) {
         if let Some(why) = gpu_compositor_unsupported(&rs.adapter) {
             log::warn!("GPU compositor disabled ({why}); compositing on the CPU");
             // Say so instead of letting the preview quietly crawl: "GPU 0 %, CPU 100 %" with no
@@ -15,7 +15,7 @@ impl FilmcraftApp {
         // fall back to the CPU compositor.
         let broken = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let flag = broken.clone();
-        rs.device.on_uncaptured_error(std::sync::Arc::new(move |e: eframe::wgpu::Error| {
+        rs.device.on_uncaptured_error(std::sync::Arc::new(move |e: wgpu::Error| {
             log::error!("GPU error, switching to the CPU compositor: {e}");
             flag.store(true, std::sync::atomic::Ordering::Relaxed);
         }));
@@ -70,10 +70,10 @@ impl FilmcraftApp {
         let mut renderer = g.render_state.renderer.write();
         let id = match g.texture {
             Some(id) => {
-                renderer.update_egui_texture_from_wgpu_texture(&g.render_state.device, &view, eframe::wgpu::FilterMode::Linear, id);
+                renderer.update_egui_texture_from_wgpu_texture(&g.render_state.device, &view, wgpu::FilterMode::Linear, id);
                 id
             }
-            None => renderer.register_native_texture(&g.render_state.device, &view, eframe::wgpu::FilterMode::Linear),
+            None => renderer.register_native_texture(&g.render_state.device, &view, wgpu::FilterMode::Linear),
         };
         g.texture = Some(id);
         g.last_key = Some(key);

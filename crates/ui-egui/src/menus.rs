@@ -924,6 +924,10 @@ pub const NATIVE_APP_MENU: [&str; 4] = ["Settings", "Hide FilmCraft", "Hide Othe
 
 pub fn menu_items(app: &FilmcraftApp) -> Vec<MenuItem> {
     let mut v = menu_items_for(&app.session);
+    // air/OS updates the package (SoftwareUpdater), not from upstream's downloads.
+    if cfg!(target_os = "haiku") {
+        v.retain(|i| i.id != "app.checkForUpdates");
+    }
     for it in &mut v {
         it.label = app.ui.language.tr(&it.label).to_string();
         match it.id.as_str() {

@@ -6,3 +6,7 @@ plan/
 .DS_Store
 .claude/worktrees/
 __pycache__/
+
+/artifacts/
+/vendor/*/Cargo.lock
+/tools/haiku/__pycache__/

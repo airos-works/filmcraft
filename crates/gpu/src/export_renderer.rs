@@ -88,6 +88,28 @@ fn device_failed() -> bool {
     DEVICE_FAILED.load(std::sync::atomic::Ordering::SeqCst)
 }
 
+/// A device the host already has, for exports to share ([`share_device`]).
+static HOST_DEVICE: std::sync::OnceLock<(wgpu::Instance, wgpu::Device, wgpu::Queue)> = std::sync::OnceLock::new();
+
+/// Render exports on the host's own device (the window's), instead of a second device on an
+/// adapter of this crate's choosing: the air/OS host, whose Vulkan device draws the window and the
+/// monitors, hands it over before the first export. Only the first call counts. A device error
+/// retires GPU export for the session as before ([`mark_device_failed`]); the host keeps its own
+/// error handler, so only a lost device is reported here, to export and then to `on_lost`.
+pub fn share_device(instance: wgpu::Instance, device: wgpu::Device, queue: wgpu::Queue, on_lost: Box<dyn Fn(&str) + Send + Sync>) {
+    device.set_device_lost_callback(move |reason, msg| {
+        let why = format!("GPU device lost ({reason:?}): {msg}");
+        mark_device_failed(&why);
+        on_lost(&why);
+    });
+    let _ = HOST_DEVICE.set((instance, device, queue));
+}
+
+/// Retire GPU export for this session (the host saw its shared device fail).
+pub fn retire_shared_device(why: &str) {
+    mark_device_failed(why);
+}
+
 pub struct ExportRenderer {
     _instance: wgpu::Instance,
     #[expect(dead_code, reason = "kept for future frame-accuracy flows (readback fences)")]
@@ -105,6 +127,10 @@ impl ExportRenderer {
         static SHARED: std::sync::OnceLock<Option<(wgpu::Instance, wgpu::Device, wgpu::Queue)>> = std::sync::OnceLock::new();
         let (instance, device, queue) = SHARED
             .get_or_init(|| {
+                if let Some(shared) = HOST_DEVICE.get() {
+                    log::info!("export rendering on the host's GPU device");
+                    return Some(shared.clone());
+                }
                 // A build without a wgpu backend for this platform (`cargo build -p filmcraft-cli`
                 // alone: this crate asks for none) has no GPU to offer, and `Instance::default()`
                 // panics there.

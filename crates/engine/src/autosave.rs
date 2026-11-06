@@ -518,6 +518,10 @@ pub fn default_data_dir() -> Option<PathBuf> {
     if cfg!(windows) {
         return env("APPDATA").map(|h| h.join("FilmCraft"));
     }
+    // air/OS (Haiku): applications keep their settings and data under ~/config/settings.
+    if cfg!(target_os = "haiku") {
+        return env("HOME").map(|h| h.join("config/settings/FilmCraft"));
+    }
     env("XDG_DATA_HOME").map(|d| d.join("filmcraft")).or_else(|| env("HOME").map(|h| h.join(".local/share/filmcraft")))
 }
 

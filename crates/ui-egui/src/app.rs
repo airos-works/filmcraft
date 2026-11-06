@@ -335,7 +335,7 @@ impl FilmcraftApp {
     /// draw panels under a panic guard, drain UI requests and check the IME editor only after
     /// this pass's commands ran. Screenshots are offered to `capture::issue`, which issues only
     /// on an accepted pass.
-    fn ui_inner(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+    fn ui_inner(&mut self, ui: &mut egui::Ui, frame: &mut crate::integration::Frame) {
         if self.ui_clock_offset.is_none() {
             let egui_time = ui.ctx().input(|input| input.time);
             if egui_time.is_finite() {
@@ -432,11 +432,12 @@ impl FilmcraftApp {
     }
 }
 
-impl eframe::App for FilmcraftApp {
+impl FilmcraftApp {
+    /// eframe's `App::raw_input_hook` (the air/OS host, which has no eframe, calls it directly).
     /// Snapshot this callback's fresh surface geometry, optionally synthesize macOS ctrl-click
     /// and agent input, and offer at most one queued synthetic step. A step already preserved by
     /// hidden logic callbacks is not appended twice; a real UI pass clears it.
-    fn raw_input_hook(&mut self, ctx: &egui::Context, raw_input: &mut egui::RawInput) {
+    pub fn frame_input(&mut self, ctx: &egui::Context, raw_input: &mut egui::RawInput) {
         self.native_window_focused = Some(raw_input.focused);
         capture::note_raw_geometry(self, ctx, raw_input);
         #[cfg(target_os = "macos")]
@@ -493,14 +494,14 @@ impl eframe::App for FilmcraftApp {
 
     /// Eframe's hidden logic callback: run the logic pass, sync the IME target context, then
     /// suspend reset state because a logic-only callback is never a UI pass.
-    fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    pub fn frame_logic(&mut self, ctx: &egui::Context, _frame: &mut crate::integration::Frame) {
         self.logic_inner(ctx);
         self.finish_ime_reset_logic(ctx);
     }
 
     /// Cancel outstanding screenshots with one error reply each, end per-viewport IME reset
     /// state, and shut the session down so its recovery journal is flushed or removed.
-    fn on_exit(&mut self) {
+    pub fn frame_exit(&mut self) {
         // Late screenshot callbacks now find a dropped slot and write nothing; clients get one error.
         capture::cancel_all(self);
         for viewport in self.ime_viewports.drain(..) {
@@ -513,7 +514,7 @@ impl eframe::App for FilmcraftApp {
 
     /// Eframe's UI entry: begin this pass's IME reset state, suspend custom controls when no
     /// eligible editor owns input, draw `ui_inner`, then run end-of-pass IME reconciliation.
-    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+    pub fn frame_ui(&mut self, ui: &mut egui::Ui, frame: &mut crate::integration::Frame) {
         let ctx = ui.ctx().clone();
         self.ime_reset.begin_pass(&ctx);
         self.ime_drawn_editor = None;
@@ -524,6 +525,25 @@ impl eframe::App for FilmcraftApp {
         }
         self.ui_inner(ui, frame);
         self.finish_ime_reset_ui(&ctx);
+    }
+}
+
+#[cfg(not(target_os = "haiku"))]
+impl eframe::App for FilmcraftApp {
+    fn raw_input_hook(&mut self, ctx: &egui::Context, raw_input: &mut egui::RawInput) {
+        self.frame_input(ctx, raw_input);
+    }
+
+    fn logic(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        self.frame_logic(ctx, frame);
+    }
+
+    fn on_exit(&mut self) {
+        self.frame_exit();
+    }
+
+    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+        self.frame_ui(ui, frame);
     }
 }
 

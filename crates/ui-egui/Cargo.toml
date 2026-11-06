@@ -29,7 +29,10 @@ filmcraft-gpu = { workspace = true }
 filmcraft-scopes = { workspace = true }
 egui = { workspace = true }
 egui_extras = { workspace = true }
-eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "clipboard"] }
+# air/OS hosts the app without eframe/winit (apps/filmcraft-haiku): the GPU compositor uses
+# egui-wgpu and wgpu directly (eframe re-exports the same crates elsewhere).
+egui-wgpu = { version = "0.37", default-features = false }
+wgpu = { version = "30", default-features = false, features = ["std", "wgsl"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
@@ -39,6 +42,9 @@ web-time = "1"
 unicode-bidi = "0.3.18"
 # ArtCraft wordmark (PNG) for the About dialog and Home screen.
 image = { version = "0.25", default-features = false, features = ["png"] }
+
+[target.'cfg(not(target_os = "haiku"))'.dependencies]
+eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "clipboard"] }
 
 # Thread/process CPU clocks for frame-job profiling (safe wrappers; see frames.rs).
 [target.'cfg(unix)'.dependencies]

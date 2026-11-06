@@ -1,7 +1,8 @@
 [workspace]
 resolver = "3"
+exclude = ["vendor"]
 members = ["crates/*", "apps/*", "xtask"]
-default-members = ["crates/*", "apps/*", "xtask"]
+default-members = ["crates/*", "apps/filmcraft", "apps/filmcraft-cli", "apps/filmcraft-web", "xtask"]
 
 [workspace.package]
 version = "0.17.0"
@@ -181,3 +182,7 @@ eframe = { git = "https://github.com/storytold/egui.git", rev = "6d518fc79968157
 egui_demo_lib = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
 egui_inspection = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
 winit = { git = "https://github.com/storytold/winit.git", rev = "a517b3846ee8457d84ee4975110bfda6797c44dc" }
+# air/OS: Haiku's Vulkan backend in wgpu (vendor/README.md).
+wgpu = { path = "vendor/wgpu" }
+wgpu-core = { path = "vendor/wgpu-core" }
+wgpu-core-deps-windows-linux-android = { path = "vendor/wgpu-core-deps-windows-linux-android" }

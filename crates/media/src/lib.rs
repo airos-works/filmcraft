@@ -237,9 +237,22 @@ pub type SharedSource = Arc<dyn MediaSource>;
 
 /// File extensions we recognise at import (the media browser filters on these).
 pub const STILL_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "bmp", "tga", "dpx", "exr", "hdr", "dng", "psd"];
+#[cfg(not(target_os = "haiku"))]
 pub const AUDIO_EXTENSIONS: &[&str] = &["wav", "wave", "bwf", "aif", "aiff", "mp3", "mp2", "m4a", "aac", "flac", "ogg", "opus"];
+/// air/OS: also the sound files the system's Media Kit decodes for FilmCraft (the air/OS host's
+/// `media_kit.rs`).
+#[cfg(target_os = "haiku")]
+pub const AUDIO_EXTENSIONS: &[&str] = &["wav", "wave", "bwf", "aif", "aiff", "mp3", "mp2", "m4a", "aac", "flac", "ogg", "opus", "wma", "ra", "ape", "au", "snd", "wv"];
+#[cfg(not(target_os = "haiku"))]
 pub const VIDEO_EXTENSIONS: &[&str] = &[
     "mp4", "m4v", "mov", "mkv", "webm", "avi", "mxf", "mts", "m2ts", "m2t", "ts", "mpg", "mpeg", "vob", "mod", "tod", "m2v", "m1v", "mpv", "3gp", "y4m", "apv",
+];
+/// air/OS: also the movies the system's Media Kit decodes for FilmCraft (Windows Media, Flash
+/// Video, DV, RealMedia, Ogg Theora…; the air/OS host's `media_kit.rs`).
+#[cfg(target_os = "haiku")]
+pub const VIDEO_EXTENSIONS: &[&str] = &[
+    "mp4", "m4v", "mov", "mkv", "webm", "avi", "mxf", "mts", "m2ts", "m2t", "ts", "mpg", "mpeg", "vob", "mod", "tod", "m2v", "m1v", "mpv", "3gp", "y4m", "apv", "wmv",
+    "asf", "flv", "f4v", "dv", "dif", "rm", "rmvb", "divx", "xvid", "ogv", "ogm", "3g2", "nut",
 ];
 
 pub fn is_importable(path: &Path) -> bool {

@@ -129,6 +129,13 @@ impl DirectorySource {
             if let Some(a) = std::env::var_os("APPDATA") {
                 dirs.push(PathBuf::from(a).join("Adobe\\CoreSync\\plugins\\livetype"));
             }
+        } else if cfg!(target_os = "haiku") {
+            // air/OS (Haiku): the system's and the user's font folders, packaged and not.
+            dirs.extend(["/boot/system/data/fonts", "/boot/system/non-packaged/data/fonts"].map(PathBuf::from));
+            if let Some(h) = &home {
+                dirs.push(h.join("config/data/fonts"));
+                dirs.push(h.join("config/non-packaged/data/fonts"));
+            }
         } else if cfg!(unix) && !cfg!(target_arch = "wasm32") {
             dirs.extend(["/usr/share/fonts", "/usr/local/share/fonts"].map(PathBuf::from));
             if let Some(h) = &home {

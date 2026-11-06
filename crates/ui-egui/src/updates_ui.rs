@@ -1,4 +1,7 @@
 //! Software updates, background check at startup, and startup prompt modal.
+//!
+//! air/OS installs and updates FilmCraft as a package (pkgman, SoftwareUpdater): there Check for
+//! Updates only says so, and upstream's release downloads aren't offered.
 
 use serde_json::Value;
 
@@ -48,7 +51,13 @@ impl FilmcraftApp {
 }
 
 pub(crate) fn check(app: &mut FilmcraftApp) -> Result<Value, String> {
-    #[cfg(not(target_arch = "wasm32"))]
+    // air/OS: the window only says that SoftwareUpdater updates the package (`show`).
+    #[cfg(target_os = "haiku")]
+    {
+        app.updates_rt.manual_window_open = true;
+        Ok(serde_json::json!({"supported": false}))
+    }
+    #[cfg(all(not(target_arch = "wasm32"), not(target_os = "haiku")))]
     {
         app.updates_rt.check_requested = true;
         app.updates_rt.manual_window_open = true;
@@ -81,6 +90,11 @@ pub(crate) fn tick(app: &mut FilmcraftApp, ctx: &egui::Context) {
 }
 
 pub(crate) fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
+    #[cfg(target_os = "haiku")]
+    if app.updates_rt.manual_window_open {
+        package_updates_window(app, ctx);
+        return;
+    }
     #[cfg(not(target_arch = "wasm32"))]
     {
         // The restart helper is scheduled before the app closes, so no update starts over unsaved work.
@@ -129,6 +143,30 @@ pub(crate) fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
         if !open {
             app.updates_rt.manual_window_open = false;
         }
+    }
+}
+
+/// air/OS: the package manager updates FilmCraft, so Check for Updates (automation and the
+/// command search; the menus leave it out) only says so.
+#[cfg(target_os = "haiku")]
+fn package_updates_window(app: &mut FilmcraftApp, ctx: &egui::Context) {
+    let mut open = true;
+    let mut ok = false;
+    egui::Window::new(crate::i18n::t("FilmCraft Updates"))
+        .open(&mut open)
+        .collapsible(false)
+        .resizable(false)
+        .pivot(egui::Align2::CENTER_CENTER)
+        .default_pos(ctx.content_rect().center())
+        .show(ctx, |ui| {
+            ui.label(format!("FilmCraft {}", env!("CARGO_PKG_VERSION")));
+            ui.add_space(8.0);
+            ui.label("FilmCraft is updated with the system's packages: SoftwareUpdater installs newer versions.");
+            ui.add_space(8.0);
+            ok = ui.button(crate::i18n::t("OK")).clicked();
+        });
+    if !open || ok {
+        app.updates_rt.manual_window_open = false;
     }
 }
 

@@ -7,13 +7,13 @@ pub(crate) fn plan_side(plan: &filmcraft_render::plan::FramePlan) -> usize {
 /// access, missing or broken drivers) runs wgpu entirely on the CPU. Compositing through one is
 /// slower than the native CPU compositor and hides the cause: GPU usage stays at 0 % while the
 /// CPU saturates. Returns a description when the adapter is one.
-pub fn software_rasterizer(info: &eframe::wgpu::AdapterInfo) -> Option<String> {
+pub fn software_rasterizer(info: &wgpu::AdapterInfo) -> Option<String> {
     rasterizer_reason(&info.name, info.device_type)
 }
 
-fn rasterizer_reason(name: &str, device_type: eframe::wgpu::DeviceType) -> Option<String> {
+fn rasterizer_reason(name: &str, device_type: wgpu::DeviceType) -> Option<String> {
     let lower = name.to_ascii_lowercase();
-    if device_type == eframe::wgpu::DeviceType::Cpu || ["llvmpipe", "swiftshader", "softpipe"].iter().any(|s| lower.contains(s)) {
+    if device_type == wgpu::DeviceType::Cpu || ["llvmpipe", "swiftshader", "softpipe"].iter().any(|s| lower.contains(s)) {
         return Some(format!("software rasterizer ({name}, {device_type:?})"));
     }
     None
@@ -23,8 +23,8 @@ fn rasterizer_reason(name: &str, device_type: eframe::wgpu::DeviceType) -> Optio
 /// targets and uploads whole frames as textures. Older or OpenGL-backed GPUs (some Intel Macs,
 /// VMs, Linux without Vulkan, WebGL) can't; those use the CPU compositor, which renders the same
 /// frames. Returns the reason when unsupported.
-pub fn gpu_compositor_unsupported(adapter: &eframe::wgpu::Adapter) -> Option<String> {
-    use eframe::wgpu::{TextureFormat, TextureFormatFeatureFlags as F, TextureUsages as U};
+pub fn gpu_compositor_unsupported(adapter: &wgpu::Adapter) -> Option<String> {
+    use wgpu::{TextureFormat, TextureFormatFeatureFlags as F, TextureUsages as U};
     if let Some(why) = software_rasterizer(&adapter.get_info()) {
         return Some(why);
     }
@@ -50,7 +50,7 @@ mod gpu_fallback_tests {
     /// "GPU" usage read 0 % because wgpu had silently fallen back to llvmpipe.
     #[test]
     fn software_rasterizers_are_detected() {
-        use eframe::wgpu::DeviceType as D;
+        use wgpu::DeviceType as D;
         let r = super::rasterizer_reason;
         assert!(r("llvmpipe (LLVM 23.1.1, 256 bits)", D::Cpu).is_some());
         assert!(r("NVIDIA GeForce RTX 4080", D::Cpu).is_some());
