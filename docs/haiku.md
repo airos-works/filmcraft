@@ -139,3 +139,37 @@ in AVI and ASF, Theora, MJPEG…), for trying the Media Kit import without ffmpe
 An original clapperboard with a play mark, in the Haiku icon style (perspective slab, light from
 the top left, floor shadow), MIT OR Apache-2.0: `python3 tools/haiku/make-icon.py` writes
 `apps/filmcraft-haiku/resources/FilmCraft.hvif` and an SVG preview.
+
+## Checked on the X399 (7 November 2026)
+
+The x86_64 build (the CI package's executable, 0.17.0~airos1-1, run from its own folder) on the
+X399 (GTX 1070, NVK Mesa 25.3.0-devel, hrev60207+2472), driven over the control channel:
+
+- It starts on Vulkan ("NVIDIA GeForce GTX 1070 (NVK GP104-A)", changed-tile readback) with the
+  native menu bar, and the monitors composite on the GPU. The demo project plays with the Media
+  Kit's clock (`audioClock: true`, the meters move); quitting with unsaved changes asks first
+  (`hey FilmCraft quit`, then Don't Save), and the process exits with status 0.
+- Export: 4 s of the demo to H.264 with GPU rendering Auto composited on the window's device
+  ("export rendering on the host's GPU device"): 5.2 frames a second, against 2.4 with GPU
+  rendering Off (the pure-Rust H.264 encoder is the rest of the time).
+- Media Kit import: an MPEG-4 Part 2 AVI (which FilmCraft's AVI reader opens but can't decode) and
+  an ASF movie (written with `tools/haiku/media-fixture.cpp`) open through the Media Kit and show
+  in the Source monitor and as thumbnails; an MPEG-2 Matroska file stays with FilmCraft's own
+  decoder. A movie with sound through the Media Kit was not tried (the Media Kit's audio encoders
+  wouldn't write a fixture).
+- Hardware decoding: the 1080p24 H.264 export, played for 8 s in the Source monitor at full
+  resolution, decoded every picture through nvdec (`perf.stats`: 192 hardware frames, no
+  fallback). Per picture 18.7 ms through nvdec (the add-on's engine about 5 ms, its copy out of
+  the card's memory 10 to 17 ms, NVDEC_TIMING=1) against 9.0 ms for FilmCraft's own frame-threaded
+  decoder; the process used 13.5 s of processor time over the 8 s against 15.9 s in software.
+  Both keep up with the film; hardware decoding stays on for the processor time it saves (more
+  for HEVC and 4K, where the software decoder does far more work).
+- The 60 frames a second cap halved the process's processor time during playback (25.4 s to
+  13.5 s over 8 s with hardware decoding).
+- `FILMCRAFT_RENDERER=cpu`: the software rasteriser and the CPU compositor draw the same
+  interface and play the clip.
+- Nothing was logged in the syslog; no team crashed.
+
+The arm64 package builds with the airos-ci toolchain (`aarch64-unknown-haiku`); it has not been
+run on an arm64 machine. Voice-over recording was not tried (the X399 has no audio input), nor
+the direct presentation mode.
