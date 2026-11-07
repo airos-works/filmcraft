@@ -1,9 +1,12 @@
-use super::{FilmcraftApp, FrameKey, GpuState, frames, gpu_compositor_unsupported, plan_side};
+use super::{FilmcraftApp, FrameKey, GpuState, frames, gpu_compositor_unsupported, plan_output_side, plan_side};
 
 impl FilmcraftApp {
     /// Enable the GPU compositor on the eframe wgpu device.
     pub fn set_wgpu(&mut self, rs: egui_wgpu::RenderState) {
-        if let Some(why) = gpu_compositor_unsupported(&rs.adapter) {
+        // The device's own texture limit too: a host may create it with less than the adapter's.
+        let device_max = rs.device.limits().max_texture_dimension_2d;
+        let unsupported = gpu_compositor_unsupported(&rs.adapter).or_else(|| (device_max < 4096).then(|| format!("max texture size {device_max} < 4096")));
+        if let Some(why) = unsupported {
             log::warn!("GPU compositor disabled ({why}); compositing on the CPU");
             // Say so instead of letting the preview quietly crawl: "GPU 0 %, CPU 100 %" with no
             // explanation read like a renderer bug when the machine simply has no GPU access.
@@ -52,13 +55,27 @@ impl FilmcraftApp {
         {
             return Some((t, g.size));
         }
-        if plan_side(&plan.plan) > g.max_texture as usize {
+        // A layer larger than the device's textures (a 6K or 8K source on a GPU with 4096 px
+        // textures, the Raspberry Pi 4's): this frame is composited on the CPU and shown through
+        // the GPU, which goes on compositing the frames that fit. Only a frame larger than a
+        // texture itself can't be shown through it.
+        let max = g.max_texture as usize;
+        let oversized = plan_side(&plan.plan) > max;
+        if oversized && plan_output_side(&plan.plan) > max {
             self.disable_gpu("frame larger than the GPU's maximum texture size");
             return None;
         }
+        if oversized {
+            log::debug!("frame {key:?} has a layer larger than the GPU's {max} px textures: composited on the CPU");
+        }
         let t0 = web_time::Instant::now();
         let ran = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let (view, size) = g.compositor.composite_prepared(&plan.plan, Some(&plan.prepared));
+            let (view, size) = if oversized {
+                let image = filmcraft_render::plan::FramePlan::Image(filmcraft_render::plan::execute_cpu(&plan.plan));
+                g.compositor.composite_prepared(&image, None)
+            } else {
+                g.compositor.composite_prepared(&plan.plan, Some(&plan.prepared))
+            };
             (view.clone(), size)
         }));
         let Ok((view, size)) = ran else {

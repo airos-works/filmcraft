@@ -112,7 +112,6 @@ pub fn retire_shared_device(why: &str) {
 
 pub struct ExportRenderer {
     _instance: wgpu::Instance,
-    #[expect(dead_code, reason = "kept for future frame-accuracy flows (readback fences)")]
     device: wgpu::Device,
     #[expect(dead_code, reason = "kept for future frame-accuracy flows (readback fences)")]
     queue: wgpu::Queue,
@@ -184,6 +183,12 @@ impl ExportRenderer {
             FramePlan::Image(img) => Some(img.clone()),
             FramePlan::Layers { .. } | FramePlan::Composite { .. } => {
                 if device_failed() {
+                    return None;
+                }
+                // A layer or canvas larger than the device's textures (a GPU with 4096 px ones, the
+                // Raspberry Pi 4's) goes to the CPU renderer: on a device the host shares, the
+                // validation error would cost its windows the GPU too.
+                if plan.max_side() > self.device.limits().max_texture_dimension_2d as usize {
                     return None;
                 }
                 let prep = prepare(&plan);

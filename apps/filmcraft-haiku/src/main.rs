@@ -19,6 +19,7 @@ mod audio_in;
 #[path = "../../filmcraft/src/control_server.rs"]
 mod control_server;
 mod damage;
+mod texture_fit;
 #[cfg(target_os = "haiku")]
 mod dialogs;
 #[cfg(target_os = "haiku")]

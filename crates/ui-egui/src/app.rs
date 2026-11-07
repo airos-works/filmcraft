@@ -1,5 +1,5 @@
 use super::audio::{AUDIO_RETRY_S, AUDIO_STALL_S};
-use super::gpu::{gpu_compositor_unsupported, plan_side};
+use super::gpu::{gpu_compositor_unsupported, plan_output_side, plan_side};
 use super::hooks::HostHooks;
 use super::raw_input::drop_native_input;
 #[cfg(target_os = "macos")]

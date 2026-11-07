@@ -3,6 +3,15 @@ pub(crate) fn plan_side(plan: &filmcraft_render::plan::FramePlan) -> usize {
     plan.max_side()
 }
 
+/// Side of the texture a plan's output takes: its canvas, or the CPU image it already is.
+pub(crate) fn plan_output_side(plan: &filmcraft_render::plan::FramePlan) -> usize {
+    use filmcraft_render::plan::FramePlan;
+    match plan {
+        FramePlan::Image(img) => img.w.max(img.h),
+        FramePlan::Layers { width, height, .. } | FramePlan::Composite { width, height, .. } => (*width).max(*height),
+    }
+}
+
 /// A software rasterizer (llvmpipe, SwiftShader, softpipe — VMs and containers without GPU device
 /// access, missing or broken drivers) runs wgpu entirely on the CPU. Compositing through one is
 /// slower than the native CPU compositor and hides the cause: GPU usage stays at 0 % while the
@@ -78,5 +87,9 @@ mod gpu_fallback_tests {
         assert_eq!(super::plan_side(&p), 1920);
         let p = FramePlan::Image(filmcraft_render::Image::new(800, 4000));
         assert_eq!(super::plan_side(&p), 4000);
+        // the output alone: a 4K layer in an HD sequence can be composited on the CPU and shown
+        assert_eq!(super::plan_output_side(&p), 4000);
+        let p = FramePlan::Layers { width: 1920, height: 1080, layers: vec![layer(3840, 2160)] };
+        assert_eq!(super::plan_output_side(&p), 1920);
     }
 }

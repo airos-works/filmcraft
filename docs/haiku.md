@@ -50,6 +50,37 @@ error or a lost device at run time switches the monitors, exports and every wind
 the next frame, with the project untouched. `FILMCRAFT_CPU_COMPOSITE=1` keeps the window on Vulkan
 but composites the monitors on the CPU, as on the desktop.
 
+Small GPUs (since `0.17.0~airos1-3`): the device asks for the adapter's own limits, with textures
+capped at 16384 px, instead of egui-wgpu's default (WebGPU's limits: 8192 px textures, 8 colour
+attachments), which the arm64 boards' GPUs refuse (V3DV on the Raspberry Pi 4: 4096 px textures, 4
+attachments), sending the window, the monitors and exports to the processor. On the X399's NVK it
+gets 16384 px textures (8192 before) and otherwise the adapter's limits. The adapter is the first
+discrete GPU, else the first integrated one, that can draw the windows (BGRA render targets,
+compute for the presenter, textures of 2048 px or more); every adapter passed over is logged with
+the reason (`GPU adapter … not used: …`), and the limits the device got are logged
+(`GPU device: textures … px, …`). What runs on the device checks `device.limits()`: the
+compositor needs 4096 px textures (else the monitors composite on the CPU), the effect stage its
+compute limits (else effects render on the CPU), and now, so that one large source never costs the
+whole session its GPU:
+
+- a monitor frame with a layer larger than the device's textures (a 6K or 8K source, or a large
+  still, on a 4096 px GPU) is composited on the CPU and shown through the GPU, which goes on
+  compositing the frames that fit (before, the first such frame turned the GPU compositor off for
+  the session; it still is when the frame itself is larger than a texture);
+- an export frame larger than the device's textures goes to the CPU renderer instead of raising a
+  validation error on the device the windows share;
+- an egui texture larger than the device takes is uploaded at a fraction of its size (logged).
+
+`FILMCRAFT_GPU_LIMITS=small` creates the device with a small GPU's limits (wgpu's downlevel ones,
+with 4096 px textures) to check this on a big GPU. On the X399 (7 November 2026: the H.264 demo
+clip and a 5000 × 2800 still over V1 of a 1920 × 1080 sequence, shown in the Program monitor, and
+a 48-frame Quick Export): with normal limits the same as the previous build (the monitors on the
+GPU, the export in 58 s, the same file); with `small` the window stayed on Vulkan, the Program
+monitor's frames with the still were composited on the CPU and shown through the GPU compositor,
+which stayed on (`RUST_LOG=filmcraft_ui_egui=debug` logs each such frame), the export's frame with
+the still went to the CPU renderer (no 56 MB upload), the same file came out in 57 s, and no GPU
+error was raised.
+
 ## Sound: the Media Kit
 
 - **Playback** is a `BSoundPlayer` node ("FilmCraft" in Cortex and the Media preferences) feeding
