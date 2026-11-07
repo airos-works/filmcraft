@@ -243,3 +243,7 @@ buffer import) are permitted for operating-system integration, as `crates/platfo
 media APIs; `crates/platform/src/media_kit.rs` (+ `native/media_kit.cpp`) is that crate's air/OS
 hardware decoder backend. Every other crate keeps `unsafe_code = "forbid"`. Do not replace the
 editor, its GPU compositor or its decoders with reduced implementations.
+The fork is distributed (air/OS packages and images), so, as `docs/brand/LICENSE-brand.txt` and
+§1.8 ask, it carries no ArtCraft marks: `docs/brand/` keeps only the licence and a note,
+`crates/ui-egui/src/brand.rs` draws nothing where upstream draws the wordmark, and the fork never
+presents itself as an ArtCraft product (plain-text "based on FilmCraft by the ArtCraft team" only).

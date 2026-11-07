@@ -115,6 +115,16 @@ but composites the monitors on the CPU, as on the desktop.
   (they need the `whisper` / `neural-voices` features); Transcribe says so, and the built-in
   voices of Text to Speech work.
 
+## ArtCraft marks
+
+The ArtCraft name, wordmark and logos are the ArtCraft Team's trademarks, and
+`docs/brand/LICENSE-brand.txt` asks a distributed fork to remove them and not to present itself as
+an ArtCraft product. This fork has none: the image files are gone from `docs/brand/`
+(`docs/brand/README.md` says why), the Import screen and About draw nothing where upstream shows
+the wordmark (`crates/ui-egui/src/brand.rs`), About says in plain text that this is the air/OS port
+of FilmCraft by the ArtCraft team, and the README credits upstream the same way. The community
+links (Discord, website, GitHub) stay, as text.
+
 ## Build and package
 
 ```sh

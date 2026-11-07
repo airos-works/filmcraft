@@ -471,7 +471,10 @@ fn about_tab(app: &mut FilmcraftApp, ui: &mut egui::Ui) {
     ui.add_space(6.0);
     ui.heading("FilmCraft");
     ui.label(tlf!("Version {version}", version = env!("CARGO_PKG_VERSION")));
-    ui.label(tl!("A clean-room, pure-Rust non-linear video editor. Part of the ArtCraft family."));
+    // A fork may say in plain text that it is based on FilmCraft by the ArtCraft team, but not
+    // present itself as an ArtCraft product (docs/brand/LICENSE-brand.txt).
+    ui.label(tl!("A clean-room, pure-Rust non-linear video editor."));
+    ui.label("air/OS port of FilmCraft by the ArtCraft team (airos-works/filmcraft).");
     ui.add_space(10.0);
     let mut link = |ui: &mut egui::Ui, id: &str, icon: Icon, label: &str, url: &str, primary: bool| {
         let size = egui::vec2(ui.available_width(), if primary { 36.0 } else { 28.0 });
