@@ -100,8 +100,11 @@ but composites the monitors on the CPU, as on the desktop.
   type once written.
 - **One running copy** (`B_SINGLE_LAUNCH`): projects and media opened from Tracker, or given to a
   later launch, arrive in the running copy (a project opens, media is imported).
-- **MIME types**: FilmCraft claims `application/x-filmcraft` (`.fcproj`) and the movie types no
-  other application claimed; the package's post-install script registers the project type.
+- **MIME types**: FilmCraft becomes the preferred application of `application/x-filmcraft`
+  (`.fcproj`) only; the package's post-install script registers that type. It lists the movie types
+  it opens, so Tracker offers it in Open With, but leaves them to the system's player: a fresh
+  system runs post-install scripts before anyone starts AirTime, which only takes types over from
+  MediaPlayer or nobody, so claiming them made double-clicked movies open in the editor.
 - **Data**: settings, auto-save, recovery and logs live in `~/config/settings/FilmCraft`
   (`FILMCRAFT_DATA_DIR` or `--data-dir` move them). Help › Reveal Log Files opens the folder.
 - **System**: links open in the preferred browser; Settings ▸ General ▸ System Language reads

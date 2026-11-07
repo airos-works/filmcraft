@@ -14,23 +14,15 @@ use crate::args::{self, Launch};
 use crate::dialogs::{self, Mode};
 use crate::host;
 
-/// The document types FilmCraft opens: its projects and the movies it reads.
-const DOCUMENT_TYPES: &[&str] = &[
-    "application/x-filmcraft",
-    "video/mp4",
-    "video/quicktime",
-    "video/x-matroska",
-    "video/webm",
-    "video/x-msvideo",
-    "video/vnd.avi",
-    "application/mxf",
-    "video/mp2t",
-    "video/mpeg",
-    "video/3gpp",
-];
+/// The document types FilmCraft becomes the preferred application of: its projects only. It opens
+/// the movie types too (its `file_types` resource lists them, so Tracker offers it in Open With),
+/// but double-clicking a movie should play it: a fresh system runs the post-install scripts before
+/// anyone starts AirTime, the system's player, and AirTime only takes types over from MediaPlayer
+/// or nobody, so claiming them here would leave movies opening in the editor.
+const DOCUMENT_TYPES: &[&str] = &["application/x-filmcraft"];
 
-/// Makes FilmCraft the preferred application of those document types that have none (the
-/// post-install script does the same for the project type when the package is installed).
+/// Makes FilmCraft the preferred application of its project type if it has none (the
+/// post-install script does the same when the package is installed).
 pub fn claim_document_types() {
     let claimed = host::claim_types(crate::SIGNATURE, DOCUMENT_TYPES);
     if claimed > 0 {
